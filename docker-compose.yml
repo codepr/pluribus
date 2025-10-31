@@ -1,0 +1,30 @@
+version: "3.7"
+services:
+  app1:
+    build: .
+    hostname: "n1.dev"
+    environment:
+      - RELEASE_NODE=pluribus@n1.dev
+      - RELEASE_DISTRIBUTION=name
+    ports:
+      - "127.0.0.1:4001:4000"
+  app2:
+    build: .
+    hostname: "n2.dev"
+    environment:
+      - RELEASE_NODE=pluribus@n2.dev
+      - RELEASE_DISTRIBUTION=name
+    ports:
+      - "127.0.0.1:4002:4000"
+  app3:
+    build: .
+    hostname: "n3.dev"
+    environment:
+      - RELEASE_NODE=pluribus@n3.dev
+      - RELEASE_DISTRIBUTION=name
+    ports:
+      - "127.0.0.1:4003:4000"
+networks:
+  default:
+    external: true
+    name: cluster-net
