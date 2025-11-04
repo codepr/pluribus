@@ -61,22 +61,34 @@ defmodule Pluribus.VirtualDevice do
   def init({device_id, logic_module, aggregator_module, opts}) do
     schedule_ms = Keyword.get(opts, :schedule_ms, @default_schedule_ms)
 
+    state = %{
+      id: device_id,
+      logic_module: logic_module,
+      aggregator_module: aggregator_module,
+      schedule_ms: schedule_ms,
+      opts: opts
+    }
+
+    {:ok, state, {:continue, :init}}
+  end
+
+  @impl true
+  def handle_continue(:init, state) do
+    %{id: device_id, logic_module: logic_module, schedule_ms: schedule_ms, opts: opts} =
+      state
+
     case logic_module.init(device_id, opts) do
-      {:ok, initial_state} ->
-        state = %{
-          id: device_id,
-          logic_module: logic_module,
-          device_state: initial_state,
-          aggregator_module: aggregator_module,
-          schedule_ms: schedule_ms,
-          startup_time: System.monotonic_time()
-        }
+      {:ok, logic_state} ->
+        init_state =
+          state
+          |> Map.put(:device_state, logic_state)
+          |> Map.put(:startup_time, System.monotonic_time())
 
         Logger.info("Device #{device_id} starting up: #{Atom.to_string(logic_module)}.init/2")
 
         Process.send_after(self(), :periodic_update, schedule_ms)
 
-        {:ok, state}
+        {:noreply, init_state}
 
       {:error, reason} ->
         {:stop, reason}
