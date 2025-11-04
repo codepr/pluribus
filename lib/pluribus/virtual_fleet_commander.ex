@@ -24,21 +24,21 @@ defmodule Pluribus.VirtualFleetCommander do
 
   """
   @spec start_device(
-          state_module :: module(),
-          telemetry_aggregator_module :: module(),
+          logic_module :: module(),
+          aggregator_module :: module(),
           opts :: Keyword.t()
         ) ::
           DynamicSupervisor.on_start_child()
   def start_device(
-        state_module,
-        telemetry_aggregator_module \\ ConsoleTelemetryAggregator,
+        logic_module,
+        aggregator_module \\ ConsoleTelemetryAggregator,
         opts \\ []
       ) do
     device_id = Keyword.get(opts, :device_id, generate_device_id())
 
     Horde.DynamicSupervisor.start_child(
       ClusterServiceSupervisor,
-      worker_spec(device_id, state_module, telemetry_aggregator_module, opts)
+      worker_spec(device_id, logic_module, aggregator_module, opts)
     )
   end
 
@@ -70,7 +70,7 @@ defmodule Pluribus.VirtualFleetCommander do
   Allowed spec entries:
 
   - `device_id` represents the ID of a virtual device, if not specified a random one will be generated
-  - `state_module` the logic of the `VirtualDevice` which defines how its internal state behaves.
+  - `logic_module` the logic of the `VirtualDevice` which defines how its internal state behaves.
     If not specified, a `GenericVirtualDevice` will be set.
   - `aggregator_module` the logic for publishing telemetries produced by the virtual
     device, may be any I/O, e.g writing to a DB, to a broker etc.
@@ -81,10 +81,10 @@ defmodule Pluribus.VirtualFleetCommander do
       iex> Pluribus.VirtualFleetCommander.start_fleet([
             %{
                 device_id: "fleet_1_1",
-                state_module: GenericVirtualDevice,
-                telemetry_aggregator: ConsoleTelemetryAggregator
+                logic_module: GenericVirtualDevice,
+                aggregator_module: ConsoleTelemetryAggregator
             },
-            %{state_module: GenericVirtualDevice},
+            %{logic_module: GenericVirtualDevice},
             %{}
           ])
   """
@@ -92,12 +92,12 @@ defmodule Pluribus.VirtualFleetCommander do
   def start_fleet(devices_spec) do
     Enum.map(devices_spec, fn device_spec ->
       device_id = Map.get(device_spec, :device_id, generate_device_id())
-      state_module = Map.get(device_spec, :state_module, GenericVirtualDevice)
+      logic_module = Map.get(device_spec, :logic_module, GenericVirtualDevice)
 
-      telemetry_aggregator_module =
+      aggregator_module =
         Map.get(
           device_spec,
-          :telemetry_aggregator,
+          :aggregator_module,
           ConsoleTelemetryAggregator
         )
 
@@ -105,7 +105,7 @@ defmodule Pluribus.VirtualFleetCommander do
 
       Horde.DynamicSupervisor.start_child(
         ClusterServiceSupervisor,
-        worker_spec(device_id, state_module, telemetry_aggregator_module, opts)
+        worker_spec(device_id, logic_module, aggregator_module, opts)
       )
     end)
   end
@@ -145,7 +145,7 @@ defmodule Pluribus.VirtualFleetCommander do
       iex> Pluribus.VirtualFleetCommander.get_telemetry("device_id")
       %{count: 2, topic: :a_topic}
   """
-  @spec get_telemetry(device_id :: String.t()) :: term()
+  @spec get_telemetry(device_id :: String.t()) :: term() | {:error, :not_found}
   def get_telemetry(device_id) do
     with {:ok, pid} <- lookup_device(device_id) do
       GenServer.call(pid, :get_telemetry)
@@ -160,19 +160,19 @@ defmodule Pluribus.VirtualFleetCommander do
       iex> Pluribus.VirtualFleetCommander.send_command("device_id", :get_telemetry)
       %{count: 2, topic: :a_topic}
   """
-  @spec send_command(device_id :: String.t(), command :: term()) :: term()
+  @spec send_command(device_id :: String.t(), command :: term()) :: term() | {:error, :not_found}
   def send_command(device_id, command) do
     with {:ok, pid} <- lookup_device(device_id) do
       GenServer.call(pid, {:command, command})
     end
   end
 
-  defp worker_spec(device_id, state_module, telemetry_aggregator, opts) do
+  defp worker_spec(device_id, logic_module, aggregator_module, opts) do
     vd_opts =
       [
         device_id: device_id,
-        device_state_module: state_module,
-        telemetry_aggregator_module: telemetry_aggregator,
+        logic_module: logic_module,
+        aggregator_module: aggregator_module,
         name: via_tuple(device_id)
       ] ++ opts
 

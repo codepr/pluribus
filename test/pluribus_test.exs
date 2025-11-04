@@ -48,18 +48,18 @@ defmodule PluribusTest do
       fleet_spec = [
         %{
           device_id: "api_fleet_1",
-          state_module: TestDevice,
-          telemetry_aggregator: TestAggregator
+          logic_module: TestDevice,
+          aggregator_module: TestAggregator
         },
         %{
           device_id: "api_fleet_2",
-          state_module: TestDevice,
-          telemetry_aggregator: TestAggregator
+          logic_module: TestDevice,
+          aggregator_module: TestAggregator
         },
         %{
           device_id: "api_fleet_3",
-          state_module: TestDevice,
-          telemetry_aggregator: TestAggregator
+          logic_module: TestDevice,
+          aggregator_module: TestAggregator
         }
       ]
 

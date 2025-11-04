@@ -14,8 +14,8 @@ defmodule Pluribus.VirtualDeviceTest do
     test "starts a device with minimal options" do
       opts = [
         device_id: "test_device_1",
-        device_state_module: TestDevice,
-        telemetry_aggregator_module: TestAggregator
+        logic_module: TestDevice,
+        aggregator_module: TestAggregator
       ]
 
       assert {:ok, pid} = VirtualDevice.start_link(opts)
@@ -27,8 +27,8 @@ defmodule Pluribus.VirtualDeviceTest do
     test "starts a device with custom schedule" do
       opts = [
         device_id: "test_device_2",
-        device_state_module: TestDevice,
-        telemetry_aggregator_module: TestAggregator,
+        logic_module: TestDevice,
+        aggregator_module: TestAggregator,
         schedule_ms: 100
       ]
 
@@ -46,8 +46,8 @@ defmodule Pluribus.VirtualDeviceTest do
 
     test "requires device_id option" do
       opts = [
-        device_state_module: TestDevice,
-        telemetry_aggregator_module: TestAggregator
+        logic_module: TestDevice,
+        aggregator_module: TestAggregator
       ]
 
       assert_raise KeyError, fn ->
@@ -60,8 +60,8 @@ defmodule Pluribus.VirtualDeviceTest do
     test "returns current device telemetry" do
       opts = [
         device_id: "test_device_3",
-        device_state_module: TestDevice,
-        telemetry_aggregator_module: TestAggregator,
+        logic_module: TestDevice,
+        aggregator_module: TestAggregator,
         name: :test_device_3
       ]
 
@@ -81,8 +81,8 @@ defmodule Pluribus.VirtualDeviceTest do
     setup do
       opts = [
         device_id: "test_device_4",
-        device_state_module: TestDevice,
-        telemetry_aggregator_module: TestAggregator,
+        logic_module: TestDevice,
+        aggregator_module: TestAggregator,
         name: :test_device_4
       ]
 
@@ -126,8 +126,8 @@ defmodule Pluribus.VirtualDeviceTest do
     test "device publishes telemetry periodically" do
       opts = [
         device_id: "test_device_5",
-        device_state_module: TestDevice,
-        telemetry_aggregator_module: TestAggregator,
+        logic_module: TestDevice,
+        aggregator_module: TestAggregator,
         schedule_ms: 50
       ]
 

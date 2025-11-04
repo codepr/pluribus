@@ -4,6 +4,12 @@ defmodule Pluribus do
   delegates most of the features to the underlying `VirtualFleetCommander` module.
   """
 
+  @default_aggregator_module Application.compile_env(
+                               :pluribus,
+                               :default_aggregator,
+                               Pluribus.TelemetryAggregators.ConsoleTelemetryAggregator
+                             )
+
   @doc """
   Deploy a device in the cluster. The device process will be started in any node of
   the cluster.
@@ -14,7 +20,8 @@ defmodule Pluribus do
     will be generated
   - `aggregator_module` the logic for publishing telemetries produced by the virtual
     device, may be any I/O, e.g writing to a DB, to a broker etc.
-    By default if not specified uses the `ConsoleTelemetryAggregator`.
+    By default if not specified uses the `ConsoleTelemetryAggregator` or the one
+    defined in the config module.
 
   ## Examples
 
@@ -22,17 +29,12 @@ defmodule Pluribus do
       {:ok, <123>}
 
   """
-  @spec deploy_device(state_module :: module(), opts :: Keyword.t()) ::
+  @spec deploy_device(logic_module :: module(), opts :: Keyword.t()) ::
           DynamicSupervisor.on_start_child()
-  def deploy_device(state_module, opts \\ []) do
-    aggregator_module =
-      Keyword.get(
-        opts,
-        :aggregator_module,
-        Pluribus.TelemetryAggregators.ConsoleTelemetryAggregator
-      )
+  def deploy_device(logic_module, opts \\ []) do
+    aggregator_module = Keyword.get(opts, :aggregator_module, @default_aggregator_module)
 
-    Pluribus.VirtualFleetCommander.start_device(state_module, aggregator_module, opts)
+    Pluribus.VirtualFleetCommander.start_device(logic_module, aggregator_module, opts)
   end
 
   @doc """
@@ -56,7 +58,7 @@ defmodule Pluribus do
 
   - `device_id` represents the ID of a virtual device, if not specified a random one
     will be generated
-  - `state_module` the logic of the `VirtualDevice` which defines how its internal state behaves.
+  - `logic_module` the logic of the `VirtualDevice` which defines how its internal state behaves.
     If not specified, a `GenericVirtualDevice` will be set.
   - `aggregator_module` the logic for publishing telemetries produced by the virtual
     device, may be any I/O, e.g writing to a DB, to a broker etc.
@@ -65,10 +67,10 @@ defmodule Pluribus do
   ### Examples
 
       iex> Pluribus.deploy_fleet([
-            %{device_id: "fleet_1_1", state_module: GenericVirtualDevice, telemetry_aggregator: ConsoleTelemetryAggregator},
-            %{device_id: "fleet_1_2", state_module: GenericVirtualDevice, telemetry_aggregator: ConsoleTelemetryAggregator},
-            %{device_id: "fleet_1_3", state_module: GenericVirtualDevice, telemetry_aggregator: ConsoleTelemetryAggregator},
-            %{state_module: GenericVirtualDevice}, %{}
+            %{device_id: "fleet_1_1", logic_module: GenericVirtualDevice, aggregator_module: ConsoleTelemetryAggregator},
+            %{device_id: "fleet_1_2", logic_module: GenericVirtualDevice, aggregator_module: ConsoleTelemetryAggregator},
+            %{device_id: "fleet_1_3", logic_module: GenericVirtualDevice, aggregator_module: ConsoleTelemetryAggregator},
+            %{logic_module: GenericVirtualDevice}, %{}
           ])
   """
   @spec deploy_fleet(device_spec :: [map()]) :: [DynamicSupervisor.on_start_child()]
@@ -82,7 +84,7 @@ defmodule Pluribus do
       iex> Pluribus.send_command("device_id", :get_telemetry)
       %{count: 2, topic: :a_topic}
   """
-  @spec send_command(device_id :: String.t(), command :: term()) :: term()
+  @spec send_command(device_id :: String.t(), command :: term()) :: term() | {:error, :not_found}
   defdelegate send_command(device_id, command), to: Pluribus.VirtualFleetCommander
 
   @doc """
@@ -92,7 +94,7 @@ defmodule Pluribus do
       iex> Pluribus.get_telemetry(:device_id)
       %{count: 2, topic: :a_topic}
   """
-  @spec get_telemetry(device_id :: String.t()) :: term()
+  @spec get_telemetry(device_id :: String.t()) :: term() | {:error, :not_found}
   defdelegate get_telemetry(device_id), to: Pluribus.VirtualFleetCommander
 
   @doc """

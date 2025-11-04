@@ -22,13 +22,13 @@ defmodule Pluribus.VirtualDevice do
   def start_link(opts) do
     device_id = Keyword.fetch!(opts, :device_id)
 
-    device_state_module =
-      Keyword.get(opts, :device_state_module, Pluribus.VirtualDevices.GenericVirtualDevice)
+    logic_module =
+      Keyword.get(opts, :logic_module, Pluribus.VirtualDevices.GenericVirtualDevice)
 
-    telemetry_aggregator_module =
+    aggregator_module =
       Keyword.get(
         opts,
-        :telemetry_aggregator_module,
+        :aggregator_module,
         Pluribus.TelemetryAggregators.ConsoleTelemetryAggregator
       )
 
@@ -36,7 +36,7 @@ defmodule Pluribus.VirtualDevice do
 
     GenServer.start_link(
       __MODULE__,
-      {device_id, device_state_module, telemetry_aggregator_module, opts},
+      {device_id, logic_module, aggregator_module, opts},
       name: name
     )
   end
@@ -58,23 +58,21 @@ defmodule Pluribus.VirtualDevice do
   # ---- GENSERVER CALLBACKS ----
 
   @impl true
-  def init({device_id, device_state_module, telemetry_aggregator_module, opts}) do
+  def init({device_id, logic_module, aggregator_module, opts}) do
     schedule_ms = Keyword.get(opts, :schedule_ms, @default_schedule_ms)
 
-    case device_state_module.init(device_id, opts) do
+    case logic_module.init(device_id, opts) do
       {:ok, initial_state} ->
         state = %{
           id: device_id,
-          state_module: device_state_module,
+          logic_module: logic_module,
           device_state: initial_state,
-          telemetry_aggregator: telemetry_aggregator_module,
+          aggregator_module: aggregator_module,
           schedule_ms: schedule_ms,
           startup_time: System.monotonic_time()
         }
 
-        Logger.info(
-          "Device #{device_id} starting up: #{Atom.to_string(device_state_module)}.init/2"
-        )
+        Logger.info("Device #{device_id} starting up: #{Atom.to_string(logic_module)}.init/2")
 
         Process.send_after(self(), :periodic_update, schedule_ms)
 
@@ -87,10 +85,10 @@ defmodule Pluribus.VirtualDevice do
 
   @impl true
   def handle_info(:periodic_update, state) do
-    {:ok, new_device_state} = state.state_module.update_state(state.device_state)
+    {:ok, new_device_state} = state.logic_module.update_state(state.device_state)
 
-    telemetry = state.state_module.report_telemetry(new_device_state)
-    state.telemetry_aggregator.publish_telemetry(telemetry)
+    telemetry = state.logic_module.report_telemetry(new_device_state)
+    state.aggregator_module.publish_telemetry(telemetry)
     Process.send_after(self(), :periodic_update, state.schedule_ms)
     new_state = %{state | device_state: new_device_state}
     {:noreply, new_state}
@@ -98,13 +96,13 @@ defmodule Pluribus.VirtualDevice do
 
   @impl true
   def handle_call(:get_telemetry, _from, state) do
-    telemetry = state.state_module.report_telemetry(state.device_state)
+    telemetry = state.logic_module.report_telemetry(state.device_state)
     {:reply, telemetry, state}
   end
 
   @impl true
   def handle_call({:command, command}, from, state) do
-    case state.state_module.handle_command(command, state.device_state) do
+    case state.logic_module.handle_command(command, state.device_state) do
       {:noreply, new_device_state} ->
         new_state = %{state | device_state: new_device_state}
         GenServer.reply(from, :ok)
