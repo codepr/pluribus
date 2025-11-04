@@ -1,6 +1,6 @@
 # Pluribus
 
-Small library to simplify testing of scalable pllatforms, e.g. MQTT platforms for IOT, it allows to
+Small library to simplify testing of scalable platforms, e.g. MQTT platforms for IoT, it allows to
 define custom behaviors and deploy virtual devices in a cluster of nodes.
 
 ## Installation

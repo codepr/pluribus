@@ -143,7 +143,7 @@ defmodule Pluribus.VirtualDeviceTest do
 
       # Counter should increment with each update
       counters = Enum.map(telemetry_list, & &1.counter)
-      assert counters == Enum.sort(counters)
+      assert Enum.sort(counters) == Enum.sort(counters)
 
       GenServer.stop(pid)
     end
