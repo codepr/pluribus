@@ -44,15 +44,15 @@ defmodule Pluribus.VirtualDevice do
   @doc """
     Public API to get the latest public state (telemetry) from a device.
   """
-  def get_telemetry(device_id) do
-    GenServer.call(device_id, :get_telemetry)
+  def get_telemetry(name) do
+    GenServer.call(name, :get_telemetry)
   end
 
   @doc """
   Public API to execute a command to the inner virtual device state.
   """
-  def send_command(device_id, command) do
-    GenServer.call(device_id, {:command, command})
+  def send_command(name, command) do
+    GenServer.call(name, {:command, command})
   end
 
   # ---- GENSERVER CALLBACKS ----

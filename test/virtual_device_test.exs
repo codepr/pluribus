@@ -13,7 +13,7 @@ defmodule Pluribus.VirtualDeviceTest do
   describe "start_link/1" do
     test "starts a device with minimal options" do
       opts = [
-        device_id: :test_device_1,
+        device_id: "test_device_1",
         device_state_module: TestDevice,
         telemetry_aggregator_module: TestAggregator
       ]
@@ -26,7 +26,7 @@ defmodule Pluribus.VirtualDeviceTest do
 
     test "starts a device with custom schedule" do
       opts = [
-        device_id: :test_device_2,
+        device_id: "test_device_2",
         device_state_module: TestDevice,
         telemetry_aggregator_module: TestAggregator,
         schedule_ms: 100
@@ -59,7 +59,7 @@ defmodule Pluribus.VirtualDeviceTest do
   describe "get_telemetry/1" do
     test "returns current device telemetry" do
       opts = [
-        device_id: :test_device_3,
+        device_id: "test_device_3",
         device_state_module: TestDevice,
         telemetry_aggregator_module: TestAggregator,
         name: :test_device_3
@@ -69,7 +69,7 @@ defmodule Pluribus.VirtualDeviceTest do
 
       telemetry = VirtualDevice.get_telemetry(:test_device_3)
 
-      assert telemetry.device_id == :test_device_3
+      assert telemetry.device_id == "test_device_3"
       assert is_integer(telemetry.counter)
       assert is_integer(telemetry.timestamp)
 
@@ -80,7 +80,7 @@ defmodule Pluribus.VirtualDeviceTest do
   describe "send_command/2" do
     setup do
       opts = [
-        device_id: :test_device_4,
+        device_id: "test_device_4",
         device_state_module: TestDevice,
         telemetry_aggregator_module: TestAggregator,
         name: :test_device_4
@@ -125,7 +125,7 @@ defmodule Pluribus.VirtualDeviceTest do
   describe "periodic updates" do
     test "device publishes telemetry periodically" do
       opts = [
-        device_id: :test_device_5,
+        device_id: "test_device_5",
         device_state_module: TestDevice,
         telemetry_aggregator_module: TestAggregator,
         schedule_ms: 50

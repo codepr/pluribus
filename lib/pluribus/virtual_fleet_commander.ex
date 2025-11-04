@@ -52,7 +52,7 @@ defmodule Pluribus.VirtualFleetCommander do
       {:ok, <123>}
 
   """
-  @spec lookup_device(device_id :: atom() | String.t()) :: {:ok, pid()} | {:error, :not_found}
+  @spec lookup_device(device_id :: String.t()) :: {:ok, pid()} | {:error, :not_found}
   def lookup_device(device_id) do
     case Horde.Registry.lookup(ClusterRegistry, device_id) do
       [{pid, _}] ->
@@ -82,7 +82,7 @@ defmodule Pluribus.VirtualFleetCommander do
 
       iex> Pluribus.VirtualFleetCommander.start_fleet([
             %{
-                device_id: :fleet_1_1,
+                device_id: "fleet_1_1",
                 state_module: GenericVirtualDevice,
                 telemetry_aggregator: ConsoleTelemetryAggregator
             },
@@ -143,14 +143,29 @@ defmodule Pluribus.VirtualFleetCommander do
         }
   def fleet_count, do: Horde.DynamicSupervisor.count_children(Pluribus.ClusterServiceSupervisor)
 
-  @spec get_telemetry(device_id :: term()) :: term()
+  @doc """
+  Retrieves the telemetry payloads from deployed virtual devices, selected by their ID.
+
+  ## Examples
+      iex> Pluribus.VirtualFleetCommander.get_telemetry("device_id")
+      %{count: 2, topic: :a_topic}
+  """
+  @spec get_telemetry(device_id :: String.t()) :: term()
   def get_telemetry(device_id) do
     with {:ok, pid} <- lookup_device(device_id) do
       GenServer.call(pid, :get_telemetry)
     end
   end
 
-  @spec send_command(device_id :: term(), command :: term()) :: term()
+  @doc """
+  Send a command to a deployed virtual device in the cluster, identified by its ID.
+  Command can be anything that is supported by the virtual device implementation.
+
+  ## Example
+      iex> Pluribus.VirtualFleetCommander.send_command("device_id", :get_telemetry)
+      %{count: 2, topic: :a_topic}
+  """
+  @spec send_command(device_id :: String.t(), command :: term()) :: term()
   def send_command(device_id, command) do
     with {:ok, pid} <- lookup_device(device_id) do
       GenServer.call(pid, {:command, command})

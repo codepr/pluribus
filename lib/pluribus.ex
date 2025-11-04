@@ -40,11 +40,11 @@ defmodule Pluribus do
 
   ## Examples
 
-      iex> Pluribus.lookup_device(:a_device_id)
+      iex> Pluribus.lookup_device("a_device_id")
       {:ok, <123>}
 
   """
-  @spec lookup_device(device_id :: atom() | String.t()) :: {:ok, pid()} | {:error, :not_found}
+  @spec lookup_device(device_id :: String.t()) :: {:ok, pid()} | {:error, :not_found}
   defdelegate lookup_device(device_id), to: Pluribus.VirtualFleetCommander
 
   @doc """
@@ -65,17 +65,34 @@ defmodule Pluribus do
   ### Examples
 
       iex> Pluribus.deploy_fleet([
-            %{device_id: :fleet_1_1, state_module: GenericVirtualDevice, telemetry_aggregator: ConsoleTelemetryAggregator},
-            %{device_id: :fleet_1_2, state_module: GenericVirtualDevice, telemetry_aggregator: ConsoleTelemetryAggregator},
-            %{device_id: :fleet_1_3, state_module: GenericVirtualDevice, telemetry_aggregator: ConsoleTelemetryAggregator},
+            %{device_id: "fleet_1_1", state_module: GenericVirtualDevice, telemetry_aggregator: ConsoleTelemetryAggregator},
+            %{device_id: "fleet_1_2", state_module: GenericVirtualDevice, telemetry_aggregator: ConsoleTelemetryAggregator},
+            %{device_id: "fleet_1_3", state_module: GenericVirtualDevice, telemetry_aggregator: ConsoleTelemetryAggregator},
             %{state_module: GenericVirtualDevice}, %{}
           ])
   """
   @spec deploy_fleet(device_spec :: [map()]) :: [DynamicSupervisor.on_start_child()]
   defdelegate deploy_fleet(device_spec), to: Pluribus.VirtualFleetCommander, as: :start_fleet
 
+  @doc """
+  Send a command to a deployed virtual device in the cluster, identified by its ID.
+  Command can be anything that is supported by the virtual device implementation.
+
+  ## Example
+      iex> Pluribus.send_command("device_id", :get_telemetry)
+      %{count: 2, topic: :a_topic}
+  """
+  @spec send_command(device_id :: String.t(), command :: term()) :: term()
   defdelegate send_command(device_id, command), to: Pluribus.VirtualFleetCommander
 
+  @doc """
+  Retrieves the telemetry payloads from deployed virtual devices, selected by their ID.
+
+  ## Examples
+      iex> Pluribus.get_telemetry(:device_id)
+      %{count: 2, topic: :a_topic}
+  """
+  @spec get_telemetry(device_id :: String.t()) :: term()
   defdelegate get_telemetry(device_id), to: Pluribus.VirtualFleetCommander
 
   @doc """

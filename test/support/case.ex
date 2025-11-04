@@ -8,20 +8,22 @@ defmodule Pluribus.TestCase do
 
   use ExUnit.CaseTemplate
 
+  alias Pluribus.TelemetryAggregators.TestAggregator
+
   using do
     quote do
       import Pluribus.TestHelpers
       import Pluribus.TestCase
 
+      alias Pluribus.TelemetryAggregators.TestAggregator
       alias Pluribus.VirtualDevice
       alias Pluribus.VirtualDevices.TestDevice
-      alias Pluribus.TelemetryAggregators.TestAggregator
     end
   end
 
   setup tags do
     # Clear any test telemetry before each test
-    Pluribus.TelemetryAggregators.TestAggregator.clear_telemetry()
+    TestAggregator.clear_telemetry()
 
     # Track started devices for cleanup
     device_ids = []
