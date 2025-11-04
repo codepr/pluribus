@@ -11,10 +11,10 @@ defmodule Pluribus do
   Allowed option entries:
 
   - `device_id` represents the ID of a virtual device, if not specified a random one
-                will be generated
+    will be generated
   - `aggregator_module` the logic for publishing telemetries produced by the virtual
-                        device, may be any I/O, e.g writing to a DB, to a broker etc.
-                        By default if not specified uses the `ConsoleTelemetryAggregator`.
+    device, may be any I/O, e.g writing to a DB, to a broker etc.
+    By default if not specified uses the `ConsoleTelemetryAggregator`.
 
   ## Examples
 
@@ -55,12 +55,12 @@ defmodule Pluribus do
   Allowed spec entries:
 
   - `device_id` represents the ID of a virtual device, if not specified a random one
-                will be generated
+    will be generated
   - `state_module` the logic of the `VirtualDevice` which defines how its internal state behaves.
-                   If not specified, a `GenericVirtualDevice` will be set.
+    If not specified, a `GenericVirtualDevice` will be set.
   - `aggregator_module` the logic for publishing telemetries produced by the virtual
-                        device, may be any I/O, e.g writing to a DB, to a broker etc.
-                        By default if not specified uses the `ConsoleTelemetryAggregator`.
+    device, may be any I/O, e.g writing to a DB, to a broker etc.
+    By default if not specified uses the `ConsoleTelemetryAggregator`.
 
   ### Examples
 
@@ -102,12 +102,9 @@ defmodule Pluribus do
   The map contains the following keys:
 
     - `:specs` the number of children processes
-    - `:active` the count of all actively running child processes managed by
-                this supervisor
-    - `:supervisors` the count of all supervisors whether or not the child
-                     process is still alive
-    - `:workers` the count of all workers, whether or not the child process
-                 is still alive
+    - `:active` the count of all actively running child processes managed by this supervisor
+    - `:supervisors` the count of all supervisors whether or not the child process is still alive
+    - `:workers` the count of all workers, whether or not the child process is still alive
 
   ## Examples
       iex> Pluribus.fleet_count()
