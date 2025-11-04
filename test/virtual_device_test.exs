@@ -35,7 +35,7 @@ defmodule Pluribus.VirtualDeviceTest do
       assert {:ok, pid} = VirtualDevice.start_link(opts)
 
       # Wait for a few updates
-      Process.sleep(350)
+      Process.sleep(320)
 
       # Should have received at least 2-3 telemetry updates
       telemetry = TestAggregator.get_telemetry()
@@ -72,6 +72,28 @@ defmodule Pluribus.VirtualDeviceTest do
       assert telemetry.device_id == "test_device_3"
       assert is_integer(telemetry.counter)
       assert is_integer(telemetry.timestamp)
+
+      GenServer.stop(:test_device_3)
+    end
+  end
+
+  describe "get_stats/1" do
+    test "returns current device stats" do
+      opts = [
+        device_id: "test_device_3",
+        logic_module: TestDevice,
+        aggregator_module: TestAggregator,
+        name: :test_device_3,
+        schedule_ms: 50
+      ]
+
+      {:ok, _pid} = VirtualDevice.start_link(opts)
+
+      Process.sleep(80)
+
+      stats = VirtualDevice.get_stats(:test_device_3)
+
+      assert %{command_count: 0, telemetry_count: 1, telemetry_volume: 84} = stats
 
       GenServer.stop(:test_device_3)
     end

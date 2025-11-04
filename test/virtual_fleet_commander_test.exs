@@ -1,5 +1,5 @@
 defmodule Pluribus.VirtualFleetCommanderTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
 
   import Pluribus.TestHelpers
 
