@@ -21,14 +21,13 @@ RUN mix do deps.get, deps.compile
 
 # compile and build release
 COPY lib lib
-COPY rel rel
 RUN mix do compile, release
 
 # prepare release image
 FROM alpine:latest AS app
 
 # install runtime dependencies
-RUN apk add --no-cache libstdc++ libgcc ncurses-libs
+# RUN apk add --no-cache libstdc++ libgcc ncurses-libs
 
 WORKDIR /app
 

@@ -11,7 +11,7 @@ defmodule Pluribus.VirtualDevice do
   require Logger
   use GenServer
 
-  @default_schedule_ms 5_000
+  @default_schedule_ms Application.compile_env(:pluribus, :default_schedule_ms, 5_000)
 
   @doc """
   Starts the device process. This is called by the device supervisor.
@@ -21,9 +21,24 @@ defmodule Pluribus.VirtualDevice do
   """
   def start_link(opts) do
     device_id = Keyword.fetch!(opts, :device_id)
-    device_state_module = Keyword.fetch!(opts, :device_state_module)
+
+    device_state_module =
+      Keyword.get(opts, :device_state_module, Pluribus.VirtualDevices.GenericVirtualDevice)
+
+    telemetry_aggregator_module =
+      Keyword.get(
+        opts,
+        :telemetry_aggregator_module,
+        Pluribus.TelemetryAggregators.ConsoleTelemetryAggregator
+      )
+
     name = Keyword.get(opts, :name, __MODULE__)
-    GenServer.start_link(__MODULE__, {device_id, device_state_module, opts}, name: name)
+
+    GenServer.start_link(
+      __MODULE__,
+      {device_id, device_state_module, telemetry_aggregator_module, opts},
+      name: name
+    )
   end
 
   @doc """
@@ -43,7 +58,7 @@ defmodule Pluribus.VirtualDevice do
   # ---- GENSERVER CALLBACKS ----
 
   @impl true
-  def init({device_id, device_state_module, opts}) do
+  def init({device_id, device_state_module, telemetry_aggregator_module, opts}) do
     schedule_ms = Keyword.get(opts, :schedule_ms, @default_schedule_ms)
 
     case device_state_module.init(device_id, opts) do
@@ -52,6 +67,7 @@ defmodule Pluribus.VirtualDevice do
           id: device_id,
           state_module: device_state_module,
           device_state: initial_state,
+          telemetry_aggregator: telemetry_aggregator_module,
           schedule_ms: schedule_ms,
           startup_time: System.monotonic_time()
         }
@@ -74,7 +90,7 @@ defmodule Pluribus.VirtualDevice do
     {:ok, new_device_state} = state.state_module.update_state(state.device_state)
 
     telemetry = state.state_module.report_telemetry(new_device_state)
-    Pluribus.TelemetryAggregator.push_telemetry(telemetry)
+    state.telemetry_aggregator.publish_telemetry(telemetry)
     Process.send_after(self(), :periodic_update, state.schedule_ms)
     new_state = %{state | device_state: new_device_state}
     {:noreply, new_state}

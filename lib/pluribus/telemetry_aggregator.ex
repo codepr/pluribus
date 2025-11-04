@@ -1,22 +1,11 @@
 defmodule Pluribus.TelemetryAggregator do
   @moduledoc """
+  Defines the required behavior for a telemetry aggregation module, can be an MQTT
+  client, or a Phoenix PubSub, Kafka client etc.
 
+  Any module implementing this behavior is responsible for defining a publish logic
+  in order to be plugged-in in a VirtualDevice.
   """
 
-  use GenServer
-
-  def start_link(opts \\ []) do
-    GenServer.start_link(__MODULE__, opts)
-  end
-
-  # ---- GENSERVER CALLBACKS ----
-
-  @impl true
-  def init(_opts) do
-    {:ok, %{}}
-  end
-
-  def push_telemetry(telemetry) do
-    IO.puts("Received #{inspect(telemetry)}")
-  end
+  @callback publish_telemetry(telemetry :: term()) :: :ok | {:error, map()}
 end
