@@ -57,7 +57,7 @@ defmodule Pluribus do
         @impl true
         def handle_continue(:start_emqtt, %{pid: pid} = state) do
           {:ok, _} = :emqtt.connect(pid)
-          emqtt_opts = Application.get_env(:weather_sensor, :emqtt)
+          emqtt_opts = Application.get_env(:aggregator_module, :emqtt)
           clientid = emqtt_opts[:clientid]
           report_topic = "reports/\#{clientid}/temperature"
           {:noreply, %{state | report_topic: report_topic}}
@@ -92,7 +92,7 @@ defmodule Pluribus do
         @impl true
         def handle_continue(:start_emqtt, %{pid: pid} = state) do
           {:ok, _} = :emqtt.connect(pid)
-          emqtt_opts = Application.get_env(:weather_sensor, :emqtt)
+          emqtt_opts = Application.get_env(:virtual_device, :emqtt)
           clientid = emqtt_opts[:clientid]
           metrics_topic = "metrics/\#{clientid}/temperature"
           {:ok, _, _} = :emqtt.subscribe(pid, {"metrics/\#{clientid}/temperature", 1})
