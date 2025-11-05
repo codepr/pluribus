@@ -14,6 +14,7 @@ defmodule Pluribus.VirtualDevice do
   @default_schedule_ms Application.compile_env(:pluribus, :default_schedule_ms, 5_000)
 
   defmodule State do
+    @moduledoc false
     @type t :: %__MODULE__{
             id: String.t(),
             logic_module: module(),

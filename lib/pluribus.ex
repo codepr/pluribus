@@ -28,6 +28,109 @@ defmodule Pluribus do
       iex> Pluribus.deploy_device(Pluribus.VirtualDevices.GenericVirtualDevice)
       {:ok, <123>}
 
+  ### MQTT - Define a custom aggregator module
+
+      defmodule MQTTTelemetryAggregator do
+        use GenServer
+        @behaviour Pluribus.TelemetryAggregator
+
+        def start_link(args) do
+          GenServer.start_link(__MODULE__, args)
+        end
+
+        # --- TELEMETRY AGGREGATOR CALLBACKS ---
+
+        @impl true
+        def publish_telemetry(telemetry) do
+          payload = :erlang.term_to_binary(message)
+          GenServer.cast(__MODULE__, {:publish, payload})
+        end
+
+        # --- GENSERVER CALLBACKS ---
+
+        @impl true
+        def init(args) do
+          {:ok, pid} = :emqtt.start_link(args)
+          {:ok, %{pid: pid}, {:continue, :start_emqtt}}
+        end
+
+        @impl true
+        def handle_continue(:start_emqtt, %{pid: pid} = state) do
+          {:ok, _} = :emqtt.connect(pid)
+          emqtt_opts = Application.get_env(:weather_sensor, :emqtt)
+          clientid = emqtt_opts[:clientid]
+          report_topic = "reports/\#{clientid}/temperature"
+          {:noreply, %{state | report_topic: report_topic}}
+        end
+
+        @impl true
+        def handle_cast({:publish, payload}, state) do
+          %{pid: pid, report_topic: report_topic} = state
+          :emqtt.publish(pid, report_topic, payload)
+          {:noreply, state}
+        end
+      end
+
+  ### MQTT - Define a custom virtual device
+
+      defmodule MQTTVirtualDevice do
+        use GenServer
+        @behaviour Pluribus.VirtualDeviceState
+
+        def start_link(args) do
+          GenServer.start_link(__MODULE__, args)
+        end
+
+        # --- GENSERVER CALLBACKS ---
+
+        @impl true
+        def init(args) do
+          {:ok, pid} = :emqtt.start_link(args)
+          {:ok, %{pid: pid}, {:continue, :start_emqtt}}
+        end
+
+        @impl true
+        def handle_continue(:start_emqtt, %{pid: pid} = state) do
+          {:ok, _} = :emqtt.connect(pid)
+          emqtt_opts = Application.get_env(:weather_sensor, :emqtt)
+          clientid = emqtt_opts[:clientid]
+          metrics_topic = "metrics/\#{clientid}/temperature"
+          {:ok, _, _} = :emqtt.subscribe(pid, {"metrics/\#{clientid}/temperature", 1})
+          {:noreply, %{state | metrics_topic: metrics_topic}}
+        end
+
+        @impl true
+        def handle_info({:publish, %{payload: payload}}, state) do
+          {:noreply, %{state | metrics: :erlang.binary_to_term(payload)}}
+        end
+
+        @impl true
+        def handle_call(:get_metrics, _from, %{metrics: metrics} = state) do
+          {:reply, metrics, state}
+        end
+
+        # --- VIRTUAL DEVICE CALLBACKS ---
+
+        @impl true
+        def report_telemetry(state) do
+          metrics = get_metrics()
+          %{
+            device_id: state.id,
+            device_type: "MQTT_Sensor",
+            timestamp: System.os_time(:millisecond),
+            data: metrics
+          }
+        end
+
+        defp get_metrics do
+          GenServer.call(__MODULE__, :get_metrics)
+        end
+      end
+
+  ### Deploy an MQTT virtual device
+
+      iex> Pluribus.deploy_device(MQTTVirtualDevice, aggregator_module: MQTTTelemetryAggregator)
+      {:ok, <123>}
   """
   @spec deploy_device(logic_module :: module(), opts :: Keyword.t()) ::
           DynamicSupervisor.on_start_child()
