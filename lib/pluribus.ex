@@ -227,4 +227,14 @@ defmodule Pluribus do
           workers: non_neg_integer()
         }
   defdelegate fleet_count, to: Pluribus.VirtualFleetCommander
+
+  @doc """
+  Lists all deployed device IDs currently running on the given node.
+
+  ## Example
+      iex> Pluribus.devices_on_node(:node_1)
+      ["device-1", "device-2"]
+  """
+  @spec devices_on_node(node :: atom()) :: [String.t()]
+  defdelegate devices_on_node(node), to: Pluribus.VirtualFleetCommander
 end

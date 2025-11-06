@@ -167,6 +167,35 @@ defmodule Pluribus.VirtualFleetCommander do
     end
   end
 
+  @doc """
+  Lists all deployed device IDs currently running on the given node.
+
+  ## Example
+      iex> Pluribus.VirtualFleetCommander.devices_on_node(:node_1)
+      ["device-1", "device-2"]
+  """
+  @spec devices_on_node(node :: atom()) :: [String.t()]
+  def devices_on_node(node) do
+    match_spec = [
+      # Match any key, value, PID, and Node
+      {
+        {:_, :_, :_, :_},
+        [],
+        # Return the key (the device ID)
+        [:"$1"]
+      }
+    ]
+
+    ClusterRegistry
+    |> Horde.Registry.select(match_spec)
+    |> Enum.filter(fn device_id ->
+      case Horde.Registry.lookup(ClusterRegistry, device_id) do
+        [{_pid, ^node}] -> true
+        _ -> false
+      end
+    end)
+  end
+
   defp worker_spec(device_id, logic_module, aggregator_module, opts) do
     vd_opts =
       [
