@@ -7,6 +7,18 @@ cluster of nodes.
 Old buried library I wrote ages ago to test out an IoT infra, resurrected and
 re-factored a little.
 
+## Roadmap
+
+Currently very rough and ready stage, next mid / long term improvements:
+
+- Better device lifecycle management (e.g. `on_start`, `on_stop` callbacks etc)
+- Fleet scaling
+- Load strategies (e.g. wave, random burts, ramp up etc)
+- Network issues simulation
+- Automated scenarios in a test-like DSL
+- Dashboard to observe the fleets, load etc
+- Pre-built aggregators (e.g. generic MQTT, HTTP / REST, FIX etc)
+
 ## Quickstart
 
 Deploy a device in the cluster. The device process will be started in any node of
