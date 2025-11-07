@@ -8,7 +8,7 @@ defmodule Pluribus.VirtualDeviceState do
 
   @callback init(device_id :: term(), opts :: Keyword.t()) :: {:ok, state :: map()}
   @callback update_state(state :: map()) :: {:ok, new_state :: map()}
-  @callback report_telemetry(state :: map()) :: map()
+  @callback report_telemetry(state :: map()) :: {:ok, map()} | {:error, term()}
   @callback handle_command(command :: atom(), state :: map()) ::
               {:noreply, map()} | {:reply, term(), map()}
 end

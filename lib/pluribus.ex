@@ -114,12 +114,12 @@ defmodule Pluribus do
         @impl true
         def report_telemetry(state) do
           metrics = get_metrics()
-          %{
+          {:ok, %{
             device_id: state.id,
             device_type: "MQTT_Sensor",
             timestamp: System.os_time(:millisecond),
             data: metrics
-          }
+          }}
         end
 
         defp get_metrics do

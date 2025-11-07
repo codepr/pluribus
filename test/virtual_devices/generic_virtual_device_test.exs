@@ -70,7 +70,7 @@ defmodule Pluribus.VirtualDevices.GenericVirtualDeviceTest do
     test "returns telemetry with correct structure" do
       {:ok, state} = GenericVirtualDevice.init("test_device", [])
 
-      telemetry = GenericVirtualDevice.report_telemetry(state)
+      assert {:ok, telemetry} = GenericVirtualDevice.report_telemetry(state)
 
       assert telemetry.device_id == "test_device"
       assert telemetry.device_type == "Counter"
@@ -81,7 +81,7 @@ defmodule Pluribus.VirtualDevices.GenericVirtualDeviceTest do
     test "includes current count in telemetry data" do
       {:ok, state} = GenericVirtualDevice.init("test_device", initial_count: 42)
 
-      telemetry = GenericVirtualDevice.report_telemetry(state)
+      assert {:ok, telemetry} = GenericVirtualDevice.report_telemetry(state)
 
       assert telemetry.data.current_count == 42
     end
@@ -89,7 +89,7 @@ defmodule Pluribus.VirtualDevices.GenericVirtualDeviceTest do
     test "includes count limit in telemetry data" do
       {:ok, state} = GenericVirtualDevice.init("test_device", max_count: 200)
 
-      telemetry = GenericVirtualDevice.report_telemetry(state)
+      assert {:ok, telemetry} = GenericVirtualDevice.report_telemetry(state)
 
       assert telemetry.data.count_limit == 200
     end
@@ -98,7 +98,7 @@ defmodule Pluribus.VirtualDevices.GenericVirtualDeviceTest do
       {:ok, state} = GenericVirtualDevice.init("test_device", [])
 
       before = System.os_time(:millisecond)
-      telemetry = GenericVirtualDevice.report_telemetry(state)
+      assert {:ok, telemetry} = GenericVirtualDevice.report_telemetry(state)
       after_time = System.os_time(:millisecond)
 
       assert telemetry.timestamp >= before
@@ -109,7 +109,7 @@ defmodule Pluribus.VirtualDevices.GenericVirtualDeviceTest do
       {:ok, state} = GenericVirtualDevice.init("test_device", initial_count: 5)
       {:ok, updated_state} = GenericVirtualDevice.update_state(state)
 
-      telemetry = GenericVirtualDevice.report_telemetry(updated_state)
+      assert {:ok, telemetry} = GenericVirtualDevice.report_telemetry(updated_state)
 
       assert telemetry.data.current_count == 6
     end
@@ -118,7 +118,7 @@ defmodule Pluribus.VirtualDevices.GenericVirtualDeviceTest do
       {:ok, state} = GenericVirtualDevice.init("test_device", initial_count: 10, max_count: 10)
       {:ok, reset_state} = GenericVirtualDevice.update_state(state)
 
-      telemetry = GenericVirtualDevice.report_telemetry(reset_state)
+      assert {:ok, telemetry} = GenericVirtualDevice.report_telemetry(reset_state)
 
       assert telemetry.data.current_count == 0
     end
@@ -291,7 +291,7 @@ defmodule Pluribus.VirtualDevices.GenericVirtualDeviceTest do
       assert state.count == 2
 
       # Check telemetry
-      telemetry = GenericVirtualDevice.report_telemetry(state)
+      assert {:ok, telemetry} = GenericVirtualDevice.report_telemetry(state)
       assert telemetry.data.current_count == 2
 
       # Send command to change max
@@ -307,7 +307,7 @@ defmodule Pluribus.VirtualDevices.GenericVirtualDeviceTest do
       assert state.count == 0
 
       # Verify telemetry after reset
-      telemetry = GenericVirtualDevice.report_telemetry(state)
+      assert {:ok, telemetry} = GenericVirtualDevice.report_telemetry(state)
       assert telemetry.data.current_count == 0
       assert telemetry.data.count_limit == 3
     end
@@ -329,7 +329,7 @@ defmodule Pluribus.VirtualDevices.GenericVirtualDeviceTest do
       assert state.count == 2
 
       # Telemetry shows correct count
-      telemetry = GenericVirtualDevice.report_telemetry(state)
+      {:ok, telemetry} = GenericVirtualDevice.report_telemetry(state)
       assert telemetry.data.current_count == 2
     end
 

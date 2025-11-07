@@ -25,12 +25,13 @@ defmodule Pluribus.VirtualDevices.TestDevice do
 
   @impl true
   def report_telemetry(state) do
-    %{
-      device_id: state.id,
-      counter: state.counter,
-      timestamp: System.system_time(:millisecond),
-      commands_count: length(state.commands_received)
-    }
+    {:ok,
+     %{
+       device_id: state.id,
+       counter: state.counter,
+       timestamp: System.system_time(:millisecond),
+       commands_count: length(state.commands_received)
+     }}
   end
 
   @impl true

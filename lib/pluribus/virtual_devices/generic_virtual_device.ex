@@ -38,15 +38,16 @@ defmodule Pluribus.VirtualDevices.GenericVirtualDevice do
 
   @impl true
   def report_telemetry(state) do
-    %{
-      device_id: state.id,
-      device_type: "Counter",
-      timestamp: System.os_time(:millisecond),
-      data: %{
-        current_count: state.count,
-        count_limit: state.max_count
-      }
-    }
+    {:ok,
+     %{
+       device_id: state.id,
+       device_type: "Counter",
+       timestamp: System.os_time(:millisecond),
+       data: %{
+         current_count: state.count,
+         count_limit: state.max_count
+       }
+     }}
   end
 
   @impl true

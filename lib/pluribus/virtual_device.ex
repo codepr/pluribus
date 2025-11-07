@@ -143,27 +143,37 @@ defmodule Pluribus.VirtualDevice do
   end
 
   @impl true
-  def handle_info(:periodic_update, %{stats: stats} = state) do
-    {:ok, new_device_state} = state.logic_module.update_state(state.device_state)
+  def handle_info(:periodic_update, %{device_state: device_state, stats: stats} = state) do
+    with {:ok, new_device_state} <- state.logic_module.update_state(device_state),
+         {:ok, telemetry} <- state.logic_module.report_telemetry(new_device_state),
+         :ok <- state.aggregator_module.publish_telemetry(telemetry) do
+      Process.send_after(self(), :periodic_update, state.schedule_ms)
 
-    telemetry = state.logic_module.report_telemetry(new_device_state)
-    state.aggregator_module.publish_telemetry(telemetry)
-    Process.send_after(self(), :periodic_update, state.schedule_ms)
+      new_stats = %{
+        stats
+        | telemetry_count: stats.telemetry_count + 1,
+          telemetry_volume: stats.telemetry_volume + telemetry_size(telemetry)
+      }
 
-    new_stats = %{
-      stats
-      | telemetry_count: stats.telemetry_count + 1,
-        telemetry_volume: stats.telemetry_volume + telemetry_size(telemetry)
-    }
-
-    new_state = %{state | device_state: new_device_state, stats: new_stats}
-    {:noreply, new_state}
+      new_state = %{state | device_state: new_device_state, stats: new_stats}
+      {:noreply, new_state}
+    else
+      {:error, reason} ->
+        Logger.error("Device #{state.id} update failed: #{inspect(reason)}")
+        {:noreply, state}
+    end
   end
 
   @impl true
   def handle_call(:get_telemetry, _from, state) do
-    telemetry = state.logic_module.report_telemetry(state.device_state)
-    {:reply, telemetry, state}
+    case state.logic_module.report_telemetry(state.device_state) do
+      {:ok, telemetry} ->
+        {:reply, telemetry, state}
+
+      {:error, reason} ->
+        Logger.error("Device #{state.id} get telemetry failed: #{inspect(reason)}")
+        {:noreply, state}
+    end
   end
 
   @impl true
@@ -186,7 +196,7 @@ defmodule Pluribus.VirtualDevice do
         {:reply, reply, new_state}
 
       {:error, reason} ->
-        {:reply, {:error, reason}}
+        {:reply, {:error, reason}, state}
     end
   end
 
